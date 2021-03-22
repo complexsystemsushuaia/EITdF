@@ -1,6 +1,7 @@
 #############################################################################################
 #
 # GREITdF module: routines for EIT data retrieving and reconstruction
+# (part of EITdF)
 #
 # Daniel Badagnani
 # Instituto de Ciencias Polares, Ambiente y Recursos Naturales
@@ -102,7 +103,11 @@ class EITdata:
         self.environment               = environ
         # Load input
         self.EIT_data_meas = io.loadmat(self.environment.inputdir+"/"+self.inputfile)['FRAMES']
-        NrMeas, NrFrames = np.shape(self.EIT_data_meas)
+        self.set_data()
+
+     
+    def set_data(self):
+        [NrMeas, NrFrames] = np.shape(self.EIT_data_meas)
         self.NrFrames = NrFrames
         self.NrMeas   = NrMeas
         self.EIT_data_meas_passive_electrodes,self.EIT_data_meas_active_electrodes = self.separate_dataframe_data()
@@ -110,7 +115,7 @@ class EITdata:
         # Order ciclically active electrodes: 15,0,1; 0,1,2; ... ;13,14,15.
         # Dim is 3*16, each triplet is an injection frame.
         #
-        if (measure_active_electrodes == 1):
+        if (self.measure_active_electrodes == 1):
             for k in range(NrFrames):
                 aux = self.EIT_data_meas_active_electrodes[3*k*16]
                 self.EIT_data_meas_active_electrodes[3*k*16] = self.EIT_data_meas_active_electrodes[3*k*16+2]
@@ -118,7 +123,8 @@ class EITdata:
                 aux = self.EIT_data_meas_active_electrodes[3*k*16+45]
                 self.EIT_data_meas_active_electrodes[3*k*16+45] = self.EIT_data_meas_active_electrodes[3*k*16+47]
                 self.EIT_data_meas_active_electrodes[3*k*16+47] = aux
-        
+        return
+		    
     
     def separate_dataframe_data(self):
         if self.measure_active_electrodes == 0:
@@ -160,6 +166,29 @@ class EITdata:
             contact_resistances.append(v/injected_currents[k])
         self.contact_resistances = contact_resistances
         return
+        
+    def add_noise(self,SNR,noise_covariance):
+        # Adds autocorrelated noise to the signal
+        # signal is a Nmeas x Nframes array.
+        # SNR: Signal to Noise Ratio
+        # noise_covariance is a Nmeas x Nmeas array.
+        #
+        # Get eigenValues and eigenVectors of the covariance matrix
+        eVa, eVe = np.linalg.eig(noise_covariance)
+        # Get the rotation from uncorrelated to correlated noise
+        T = eVe.dot(np.diag(np.sqrt(eVa)))
+        #
+        [Nmeas, Nframes] = np.shape(self.EIT_data_meas)
+        # Generate frames of noise
+        uncorrelated_noise = [np.random.normal(0,1,Nframes) for k in range(Nmeas)]
+        uncorrelated_noise_frames = np.vstack(uncorrelated_noise)
+        noise_frames = T.dot(uncorrelated_noise_frames)
+        # Get renormalization factor for noise to the specified SNR
+        noise_level = np.linalg.norm(self.EIT_data_meas)/(SNR * np.linalg.norm(noise_frames))
+        # Add noise frames to data frames as returned data
+        self.EIT_data_meas = self.EIT_data_meas + noise_frames * noise_level
+        self.set_data()
+        return
 
 class ReconstructionModel(object):
     def __init__(self,model_name,hyperparameter,environ_options):
@@ -170,14 +199,21 @@ class ReconstructionModel(object):
         self.hyperparameter = hyperparameter
         self.y_matrix       = io.loadmat(environ_options.modelsdir+"/"+model_name+"/y.mat")['Y']
         self.d_matrix       = io.loadmat(environ_options.modelsdir+"/"+model_name+"/d.mat")['D']
+        try:
+            self.Sn = io.loadmat(environ_options.modelsdir+"/"+model_name+"/Sn.mat")['Sn']
+        except OSError:
+            print("Noise covariances not found. Using identity.")
+            self.Sn = np.identity(208)
         # Compute inverse matrix
         w = hyperparameter
-        m_matrix            = self.y_matrix.dot(self.y_matrix.transpose()) + np.identity(208)*(w**2)
+        m_matrix            = self.y_matrix.dot(self.y_matrix.transpose()) + self.Sn*(w**2)
         pjt_matrix          = self.d_matrix.dot(self.y_matrix.transpose())
         self.rm             = pjt_matrix.dot(np.linalg.inv(m_matrix))
         # Triangulation (tri and nodes)
-        self.tri            = io.loadmat(environ_options.modelsdir+"/"+model_name+"/elems.mat")['elems']-1
-        self.nodes          = (io.loadmat(environ_options.modelsdir+"/"+model_name+"/nodes.mat")['nodes']).transpose()
+        self.tri                  = io.loadmat(environ_options.modelsdir+"/"+model_name+"/elems.mat")['elems']-1
+        self.nodes                = (io.loadmat(environ_options.modelsdir+"/"+model_name+"/nodes.mat")['nodes']).transpose()
+        self.boundary             = io.loadmat(environ_options.modelsdir+"/"+model_name+"/boundary.mat")["boundary_coords"]
+        self.electrode_positions  = io.loadmat(environ_options.modelsdir+"/"+model_name+"/electrode_positions.mat")["electrode_positions"]
         
     def set_hyperparameter(self,hyperparameter):
         self.hyperparameter = hyperparameter
@@ -211,12 +247,12 @@ class RawImage:
                 resmin = res
         return framin
     
-    def ShowFrame(self,frame_number):
-        color=self.RawImage[:,frame_number]             #color=delta_normalizado[:,delta]
-        color=np.array([[c,c] for c in color]).ravel()  #color=np.array([[c,c] for c in color]).ravel()
-        plt.tripcolor(self.rec_model.nodes[0],self.rec_model.nodes[1],self.rec_model.tri,facecolors=color,cmap = cm.PuOr)
-        #plt.tripcolor(nod[0],nod[1],tri,facecolors=color)
-        return
+ #   def ShowFrame(self,frame_number):
+ #       color=self.RawImage[:,frame_number]             #color=delta_normalizado[:,delta]
+ #       color=np.array([[c,c] for c in color]).ravel()  #color=np.array([[c,c] for c in color]).ravel()
+ #       plt.tripcolor(self.rec_model.nodes[0],self.rec_model.nodes[1],self.rec_model.tri,facecolors=color,cmap = cm.PuOr)
+ #       #plt.tripcolor(nod[0],nod[1],tri,facecolors=color)
+ #       return
    
    
    

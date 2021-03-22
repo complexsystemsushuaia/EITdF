@@ -1,0 +1,23 @@
+# Created by Octave 4.2.2, Tue Jan 05 17:37:42 2021 -03 <daniel@daniel-HP-Spectre-x360-Convertible>
+# name: z_elec
+# type: matrix
+# rows: 16
+# columns: 1
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+ 0.01
+
+
