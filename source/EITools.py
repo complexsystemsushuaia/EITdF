@@ -48,6 +48,15 @@ def show_image_frame(frame, nodes, triangles, boundary, electrode_positions): #A
 	thisplot.plot(boundary[:,0],boundary[:,1])
 	thisplot.scatter(electrode_positions[:,0], electrode_positions[:,1])
 	return
+
+def show_image_frame_dif(frame1, frame2, nodes, triangles, boundary, electrode_positions):
+	color=frame2[:]-frame1[:]             #color=delta_normalizado[:,delta]
+	color=np.array([[c,c] for c in color]).ravel()  #color=np.array([[c,c] for c in color]).ravel()
+	thisplot = plt
+	thisplot.tripcolor(nodes[0], nodes[1], triangles, facecolors=color,cmap = cm.PuOr)
+	thisplot.plot(boundary[:,0],boundary[:,1])
+	thisplot.scatter(electrode_positions[:,0], electrode_positions[:,1])
+	return
 	
 def get_frame_pixel_from_coordinates(frame, x, y):
 	pass
