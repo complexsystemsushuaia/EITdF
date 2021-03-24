@@ -204,11 +204,13 @@ class ReconstructionModel(object):
         except OSError:
             print("Noise covariances not found. Using identity.")
             self.Sn = np.identity(208)
+        self.IsTijonov = 1;
+        try:
+            self.J  = io.loadmat(environ_options.modelsdir+"/"+model_name+"/J.mat")['J']
+        except OSError:
+            self.IsTijonov = 0;
         # Compute inverse matrix
-        w = hyperparameter
-        m_matrix            = self.y_matrix.dot(self.y_matrix.transpose()) + self.Sn*(w**2)
-        pjt_matrix          = self.d_matrix.dot(self.y_matrix.transpose())
-        self.rm             = pjt_matrix.dot(np.linalg.inv(m_matrix))
+        self.set_hyperparameter(hyperparameter)
         # Triangulation (tri and nodes)
         self.tri                  = io.loadmat(environ_options.modelsdir+"/"+model_name+"/elems.mat")['elems']-1
         self.nodes                = (io.loadmat(environ_options.modelsdir+"/"+model_name+"/nodes.mat")['nodes']).transpose()
@@ -219,9 +221,13 @@ class ReconstructionModel(object):
         self.hyperparameter = hyperparameter
         # Compute inverse matrix
         w = self.hyperparameter
-        m_matrix            = self.y_matrix.dot(self.y_matrix.transpose()) + np.identity(208)*(w**2)
-        pjt_matrix          = self.d_matrix.dot(self.y_matrix.transpose())
-        self.rm             = pjt_matrix.dot(np.linalg.inv(m_matrix))
+        if (self.IsTijonov):
+            m_matrix            = self.J.dot(self.J.transpose()) + self.Sn*(w**2)
+            self.rm             = self.J.transpose().dot(np.linalg.inv(m_matrix))
+        else:
+            m_matrix            = self.y_matrix.dot(self.y_matrix.transpose()) + self.Sn*(w**2)
+            pjt_matrix          = self.d_matrix.dot(self.y_matrix.transpose())
+            self.rm             = pjt_matrix.dot(np.linalg.inv(m_matrix))
         return
 
 class RawImage:
