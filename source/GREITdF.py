@@ -256,6 +256,8 @@ class RawImage:
     def CalcRawImage(self,refframe):
         self.eitdata.get_normalized_dataframes(refframe)
         self.RawImage=np.matmul(self.rec_model.rm,self.eitdata.EIT_normalized_dif)
+        self.min = self.RawImage.min()
+        self.max = self.RawImage.max()
         return
     
     def GetRefFrame(self):

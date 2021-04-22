@@ -40,8 +40,16 @@ def add_noise(signal,SNR,noise_covariance):
 	return signal + noise_frames * noise_level
 """
 	
-def show_image_frame(frame, nodes, triangles, boundary, electrode_positions): #Add palette options in params
-	color=frame[:]             #color=delta_normalizado[:,delta]
+def show_image_frame(frame, nodes, triangles, boundary, electrode_positions, min = 1, max = -1): #Add palette options in params
+	if (min > max):
+		min = frame.min()
+		max = frame.max()
+	if (abs(max) > abs(min)):
+		scalefactor = abs(max)
+	else:
+		scalefactor = abs(min)
+	color=1/scalefactor*frame[:]             #color=delta_normalizado[:,delta]
+	color[0] = 1
 	color=np.array([[c,c] for c in color]).ravel()  #color=np.array([[c,c] for c in color]).ravel()
 	thisplot = plt
 	thisplot.tripcolor(nodes[0], nodes[1], triangles, facecolors=color,cmap = cm.PuOr)
