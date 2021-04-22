@@ -46,10 +46,12 @@ def show_image_frame(frame, nodes, triangles, boundary, electrode_positions, min
 		max = frame.max()
 	if (abs(max) > abs(min)):
 		scalefactor = abs(max)
+		cref = 1
 	else:
 		scalefactor = abs(min)
+		cref = -1
 	color=1/scalefactor*frame[:]             #color=delta_normalizado[:,delta]
-	color[0] = 1
+	color[0] = cref
 	color=np.array([[c,c] for c in color]).ravel()  #color=np.array([[c,c] for c in color]).ravel()
 	thisplot = plt
 	thisplot.tripcolor(nodes[0], nodes[1], triangles, facecolors=color,cmap = cm.PuOr)
