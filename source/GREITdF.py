@@ -50,7 +50,7 @@
 # self.rm         (numpy array)
 # self.hyperparam (double)
 #
-# self.set_rec_mat(hyperparam)
+# self.set_hyperparameter(hyperparam_fraction)
 # self.get_raw_image(meas_filename,image_filename,meas_current=1)
 # self.show_raw_image()
 # self.show_raw_frame(frame_nr)  (show electrode resistances if available)
@@ -191,12 +191,12 @@ class EITdata:
         return
 
 class ReconstructionModel(object):
-    def __init__(self,model_name,hyperparameter,environ_options):
+    def __init__(self,model_name,hyperparameter_fraction,environ_options):
         # environ_options: an EnvironOpt object
         # 
         # 
         self.modelname      = model_name
-        self.hyperparameter = hyperparameter
+        self.hyperparameter_fraction = hyperparameter_fraction
         self.y_matrix       = io.loadmat(environ_options.modelsdir+"/"+model_name+"/y.mat")['Y']
         self.d_matrix       = io.loadmat(environ_options.modelsdir+"/"+model_name+"/d.mat")['D']
         try:
@@ -209,25 +209,39 @@ class ReconstructionModel(object):
             self.J  = io.loadmat(environ_options.modelsdir+"/"+model_name+"/J.mat")['J']
         except OSError:
             self.IsTijonov = 0;
+        filename = environ_options.modelsdir+"/"+model_name+"/noiselev.mat"
+        with open(filename) as f:
+            lines = f.readlines()
+        k = 0
+        isfloat = 0
+        while (isfloat == 0):
+            try:
+                isfloat = 1
+                self.hyperparameter = float(lines[k])
+            except ValueError:
+                k += 1
+                isfloat = 0
         # Compute inverse matrix
-        self.set_hyperparameter(hyperparameter)
+        self.set_hyperparameter(hyperparameter_fraction)
         # Triangulation (tri and nodes)
         self.tri                  = io.loadmat(environ_options.modelsdir+"/"+model_name+"/elems.mat")['elems']-1
         self.nodes                = (io.loadmat(environ_options.modelsdir+"/"+model_name+"/nodes.mat")['nodes']).transpose()
         self.boundary             = io.loadmat(environ_options.modelsdir+"/"+model_name+"/boundary.mat")["boundary_coords"]
         self.electrode_positions  = io.loadmat(environ_options.modelsdir+"/"+model_name+"/electrode_positions.mat")["electrode_positions"]
         
-    def set_hyperparameter(self,hyperparameter):
-        self.hyperparameter = hyperparameter
+    def set_hyperparameter(self,hyperparameter_fraction):
+        self.hyperparameter_fraction = hyperparameter_fraction
         # Compute inverse matrix
-        w = self.hyperparameter
+        w = self.hyperparameter * self.hyperparameter_fraction
         if (self.IsTijonov):
             m_matrix            = self.J.dot(self.J.transpose()) + self.Sn*(w**2)
             self.rm             = self.J.transpose().dot(np.linalg.inv(m_matrix))
+            print("TIJONOV")
         else:
             m_matrix            = self.y_matrix.dot(self.y_matrix.transpose()) + self.Sn*(w**2)
             pjt_matrix          = self.d_matrix.dot(self.y_matrix.transpose())
             self.rm             = pjt_matrix.dot(np.linalg.inv(m_matrix))
+            print("GREIT")
         return
 
 class RawImage:
