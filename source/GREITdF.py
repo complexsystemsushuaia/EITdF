@@ -97,9 +97,8 @@ class EnvironOpt(object):
 
 
 class EITdata:
-    def __init__(self,environ,inputfile,measure_active_electrodes=1):
+    def __init__(self,environ,inputfile):
         self.inputfile                 = inputfile
-        self.measure_active_electrodes = measure_active_electrodes
         self.environment               = environ
         # Load input
         self.EIT_data_meas = io.loadmat(self.environment.inputdir+"/"+self.inputfile)['FRAMES']
@@ -110,6 +109,10 @@ class EITdata:
         [NrMeas, NrFrames] = np.shape(self.EIT_data_meas)
         self.NrFrames = NrFrames
         self.NrMeas   = NrMeas
+        if (NrMeas == 256):
+            self.measure_active_electrodes = 1
+        else:
+            self.measure_active_electrodes = 0
         self.EIT_data_meas_passive_electrodes,self.EIT_data_meas_active_electrodes = self.separate_dataframe_data()
         #
         # Order ciclically active electrodes: 15,0,1; 0,1,2; ... ;13,14,15.
