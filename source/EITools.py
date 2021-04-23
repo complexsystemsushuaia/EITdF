@@ -46,15 +46,60 @@ def show_image_frame(frame, nodes, triangles, boundary, electrode_positions, min
 		max = frame.max()
 	if (abs(max) > abs(min)):
 		scalefactor = abs(max)
-		cref = 1
 	else:
 		scalefactor = abs(min)
-		cref = -1
 	color=1/scalefactor*frame[:]             #color=delta_normalizado[:,delta]
-	color[0] = cref
+	#color[0] = min/scalefactor
+	#color[1] = max/scalefactor
+	color=np.array([[c,c] for c in color]).ravel()  #color=np.array([[c,c] for c in color]).ravel()
+	thisplot = plt
+	thisplot.tripcolor(nodes[0], nodes[1], triangles, facecolors=color,cmap = cm.PuOr, vmin=min/scalefactor, vmax=max/scalefactor)
+	thisplot.plot(boundary[:,0],boundary[:,1])
+	thisplot.scatter(electrode_positions[:,0], electrode_positions[:,1])
+	return
+
+def show_image_frame_onlypositive(frame, nodes, triangles, boundary, electrode_positions, min = 1, max = -1): #Add palette options in params
+	if (min > max):
+		min = frame.min()
+		max = frame.max()
+	if (abs(max) > abs(min)):
+		scalefactor = abs(max)
+	else:
+		scalefactor = abs(min)
+	color = []
+	for k in range (0,frame.shape[0]):
+		if (frame[k] > 0):
+			color.append(frame[k]/scalefactor)
+		else:
+			color.append(0)
+	color[0] = min/scalefactor
+	color[1] = max/scalefactor
 	color=np.array([[c,c] for c in color]).ravel()  #color=np.array([[c,c] for c in color]).ravel()
 	thisplot = plt
 	thisplot.tripcolor(nodes[0], nodes[1], triangles, facecolors=color,cmap = cm.PuOr)
+	thisplot.plot(boundary[:,0],boundary[:,1])
+	thisplot.scatter(electrode_positions[:,0], electrode_positions[:,1])
+	return
+	
+def show_image_frame_onlynegative(frame, nodes, triangles, boundary, electrode_positions, min = 1, max = -1): #Add palette options in params
+	if (min > max):
+		min = frame.min()
+		max = frame.max()
+	if (abs(max) > abs(min)):
+		scalefactor = abs(max)
+	else:
+		scalefactor = abs(min)
+	color = []
+	for k in range (0,frame.shape[0]):
+		if (frame[k] < 0):
+			color.append(frame[k]/scalefactor)
+		else:
+			color.append(0)
+	#color[0] = min/scalefactor
+	#color[1] = max/scalefactor
+	color=np.array([[c,c] for c in color]).ravel()  #color=np.array([[c,c] for c in color]).ravel()
+	thisplot = plt
+	thisplot.tripcolor(nodes[0], nodes[1], triangles, facecolors=color, cmap = cm.gray, vmin=min/scalefactor, vmax=max/scalefactor)  # cmap = cm.PuOr
 	thisplot.plot(boundary[:,0],boundary[:,1])
 	thisplot.scatter(electrode_positions[:,0], electrode_positions[:,1])
 	return
@@ -67,6 +112,16 @@ def show_image_frame_dif(frame1, frame2, nodes, triangles, boundary, electrode_p
 	thisplot.plot(boundary[:,0],boundary[:,1])
 	thisplot.scatter(electrode_positions[:,0], electrode_positions[:,1])
 	return
+	
+def get_wavefunction(raw_image):
+	wf = []
+	deriv = []
+	dims = np.shape(raw_image.RawImage)
+	for k in range(0,dims[1]):
+		wf.append(sum(raw_image.RawImage[:,k]))
+		if (k > 0):
+			deriv.append(wf[k]-wf[k-1])
+	return wf, deriv
 	
 def get_frame_pixel_from_coordinates(frame, x, y):
 	pass
