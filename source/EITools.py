@@ -39,6 +39,21 @@ def add_noise(signal,SNR,noise_covariance):
 	# Add noise frames to data frames as returned data
 	return signal + noise_frames * noise_level
 """
+
+def show_gridimage_frame(frame, recmodel, vmin, vmax):
+    gridframe = np.empty((recmodel.Ygridsize,recmodel.Xgridsize))
+    for i in range(0,recmodel.Ygridsize):
+        for j in range(0,recmodel.Xgridsize):
+            indx = round(recmodel.condmap[i,j])
+            if (indx == -1):
+                gridframe[i,j] = vmax
+            else:
+                gridframe[i,j] = frame[indx]
+    thisplot = plt
+    thisplot.imshow(gridframe, cmap = cm.Blues, interpolation='bicubic', extent=(recmodel.x0, recmodel.xf, recmodel.y0, recmodel.yf), vmin=vmin, vmax=vmax)
+    thisplot.plot(recmodel.boundary[:,0], recmodel.boundary[:,1])
+    thisplot.scatter(recmodel.electrode_positions[:,0], recmodel.electrode_positions[:,1])
+	
 	
 def show_image_frame(frame, nodes, triangles, boundary, electrode_positions, min = 1, max = -1): #Add palette options in params
 	if (min > max):
