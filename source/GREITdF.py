@@ -224,6 +224,11 @@ class ReconstructionModel(object):
             except ValueError:
                 k += 1
                 isfloat = 0
+        filename = environ_options.modelsdir+"/"+model_name+"/recogrid"
+        with open(filename) as f:
+            lines = f.readlines()
+        self.Xgridsize = int(lines[0])
+        self.Ygridsize = int(lines[1])
         # Compute inverse matrix
         self.set_hyperparameter(hyperparameter_fraction)
         # Triangulation (tri and nodes)
@@ -231,6 +236,25 @@ class ReconstructionModel(object):
         self.nodes                = (io.loadmat(environ_options.modelsdir+"/"+model_name+"/nodes.mat")['nodes']).transpose()
         self.boundary             = io.loadmat(environ_options.modelsdir+"/"+model_name+"/boundary.mat")["boundary_coords"]
         self.electrode_positions  = io.loadmat(environ_options.modelsdir+"/"+model_name+"/electrode_positions.mat")["electrode_positions"]
+        # Triangulation to Grid
+        self.x0     = self.nodes[0,0]
+        self.xf     = self.nodes[0,self.Xgridsize]
+        grdszx = (self.xf - self.x0)/self.Xgridsize
+        self.y0     = self.nodes[1,0]
+        self.yf     = self.nodes[1,(self.Xgridsize+1)*(self.Ygridsize+1)-1]
+        grdszy = (self.yf - self.y0)/self.Ygridsize
+        # self_condmap is the map from the grid to a row_image frame
+        self.condmap = np.empty((self.Xgridsize, self.Ygridsize))
+        for i in range(0,self.Ygridsize):
+            for j in range(0,self.Xgridsize):
+                self.condmap[i,j] = -1
+        dims = np.shape(self.rm)
+        for k in range(0,dims[0]):
+            ta = round(self.tri[2*k,0])
+            i  = round((self.nodes[0,ta]-self.x0)/grdszx)
+            j  = round((self.nodes[1,ta]-self.y0)/grdszy)
+            self.condmap[31-j,i] = k
+        
         
     def set_hyperparameter(self,hyperparameter_fraction):
         self.hyperparameter_fraction = hyperparameter_fraction
@@ -244,7 +268,6 @@ class ReconstructionModel(object):
             m_matrix            = self.y_matrix.dot(self.y_matrix.transpose()) + self.Sn*(w**2)
             pjt_matrix          = self.d_matrix.dot(self.y_matrix.transpose())
             self.rm             = pjt_matrix.dot(np.linalg.inv(m_matrix))
-            print("GREIT")
         return
 
 class RawImage:
