@@ -40,13 +40,15 @@ def add_noise(signal,SNR,noise_covariance):
 	return signal + noise_frames * noise_level
 """
 
-def show_gridimage_frame(frame, recmodel, vmin, vmax):
+def show_gridimage_frame(frame, recmodel, vmin, vmax, invert=False):
     gridframe = np.empty((recmodel.Ygridsize,recmodel.Xgridsize))
     for i in range(0,recmodel.Ygridsize):
         for j in range(0,recmodel.Xgridsize):
             indx = round(recmodel.condmap[i,j])
+            fillout = vmax
+            if invert: fillout = vmin
             if (indx == -1):
-                gridframe[i,j] = vmax
+                gridframe[i,j] = fillout
             else:
                 gridframe[i,j] = frame[indx]
     thisplot = plt
@@ -145,5 +147,18 @@ def get_frame_pixel_from_pseudopolar(frame, r, theta):
 	# r is a normalized radius (being 0 the origin and 1 the boundary for the given theta
 	# theta: angle in degrees respect to x axis
 	pass
-	
- 
+
+def get_sd_image(raw_image, initial_frnr, final_frnr, threshold):
+	[sizeFrame, NrFrames]  = np.shape(raw_image)
+	if (initial_frnr > final_frnr)|(final_frnr > NrFrames):
+		print("*** ERROR in frame nr limits ***")
+		return
+	aux = []
+	for k in range(0,sizeFrame):
+		aux.append(np.std(raw_image[k,slice(initial_frnr, final_frnr+1)]))
+	aux_array = np.array(aux)
+	max_sd = aux_array.max()
+	for k in range(0,sizeFrame):
+		if (aux[k]/max_sd < threshold):
+			aux_array[k] = 0
+	return aux_array
