@@ -162,3 +162,4 @@ def get_sd_image(raw_image, initial_frnr, final_frnr, threshold):
 		if (aux[k]/max_sd < threshold):
 			aux_array[k] = 0
 	return aux_array
+
