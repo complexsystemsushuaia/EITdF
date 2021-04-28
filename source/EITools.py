@@ -53,6 +53,7 @@ def show_gridimage_frame(frame, recmodel, vmin, vmax, invert=False):
                 gridframe[i,j] = frame[indx]
     thisplot = plt
     thisplot.imshow(gridframe, cmap = cm.Blues, interpolation='bicubic', extent=(recmodel.x0, recmodel.xf, recmodel.y0, recmodel.yf), vmin=vmin, vmax=vmax)
+    thisplot.colorbar()
     thisplot.plot(recmodel.boundary[:,0], recmodel.boundary[:,1])
     thisplot.scatter(recmodel.electrode_positions[:,0], recmodel.electrode_positions[:,1])
 	
