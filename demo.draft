@@ -2,13 +2,13 @@
  "cells": [
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": 2,
    "metadata": {},
    "outputs": [
     {
      "data": {
       "application/vnd.jupyter.widget-view+json": {
-       "model_id": "9713d9fc46df4e788ccae3337a981515",
+       "model_id": "7b5eb6fd5bfd4b8ea95de0795ced2e41",
        "version_major": 2,
        "version_minor": 0
       },
@@ -28,7 +28,7 @@
     "import math\n",
     "import sys\n",
     "import os\n",
-    "basedir   = os.getcwd()\n",
+    "basedir   = os.getcwd()+'/../EITdF'\n",
     "sourcedir = basedir+'/source'\n",
     "sys.path.append(sourcedir)\n",
     "import GREITdF\n",
@@ -142,7 +142,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.6.8"
+   "version": "3.7.6"
   }
  },
  "nbformat": 4,
