@@ -1,4 +1,4 @@
-This is EITdF, the Fuegian software for handling Electric Impedance Tomography.
+## This is EITdF, the Fuegian software for handling Electric Impedance Tomography.
 
 Daniel Badagnani
 Instituto de Ciencias Polares, Ambiente y Recursos Naturales
