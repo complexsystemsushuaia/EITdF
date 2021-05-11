@@ -67,8 +67,8 @@
 # METHODS:
 #
 # RawImage.RawImage(rec_model,eitdata)
-# RawImage.CalcRawImage(reffframe) #refframe is the number of frame taken as reference. It is called by the constructor.
-# RawImage.GetRefFrame()           #finds the minimum conductivity frame to act as a reference. Called by constructor.
+# RawImage.calc_raw_image(reffframe) #refframe is the number of frame taken as reference. It is called by the constructor.
+# RawImage.get_ref_frame()           #finds the minimum conductivity frame to act as a reference. Called by constructor.
 # RawImage.ShowFrame(frame_number) #plots frame
 #
 
@@ -189,7 +189,7 @@ class EITdata:
     self.EIT_data_meas = self.EIT_data_meas + noise_frames * noise_level
     self.set_data()
     
-##############################################################################################################
+    
 class ReconstructionModel(object):
   def __init__(self,model_name,hyperparameter_fraction,environ_options):
     # environ_options: an EnvironOpt object
@@ -271,16 +271,16 @@ class RawImage:
   def __init__(self,rec_model,eitdata):
     self.rec_model = rec_model
     self.eitdata   = eitdata
-    self.CalcRawImage(0)
+    self.calc_raw_image(0)
       
-  def CalcRawImage(self,refframe):
+  def calc_raw_image(self,refframe):
     self.eitdata.get_normalized_dataframes(refframe)
     self.RawImage=np.matmul(self.rec_model.rm,self.eitdata.EIT_normalized_dif)
     self.min = self.RawImage.min()
     self.max = self.RawImage.max()
   
     
-  def GetRefFrame(self):
+  def get_ref_frame(self):
     meast,frames = np.shape(self.RawImage)
     resmin = -10000000
     for frame in range(frames):
