@@ -23,10 +23,10 @@
 # EITdata.inputfile
 # EITdata.measure_active_electrodes
 # EITdata.environment
-# EITdata.EIT_data_meas
-# EITdata.EIT_data_meas_passive_electrodes
+# EITdata.eit_data_meas
+# EITdata.eit_data_meas_passive_electrodes
 
-# EITdata.EIT_data_meas_active_electrodes
+# EITdata.eit_data_meas_active_electrodes
 # EITdata.EIT_normalized_dif
 # EITdata.ref_dataframe
 #
@@ -100,60 +100,60 @@ class EITdata:
     self.inputfile                 = inputfile
     self.environment               = environ
     # Load input
-    self.EIT_data_meas = io.loadmat(self.environment.inputdir+"/"+self.inputfile)['FRAMES']
+    self.eit_data_meas = io.loadmat(self.environment.inputdir+"/"+self.inputfile)['FRAMES']
     self.set_data()
 
 
   def set_data(self):
-    [NrMeas, NrFrames] = np.shape(self.EIT_data_meas)
-    self.NrFrames = NrFrames
-    self.NrMeas   = NrMeas
-    if (NrMeas == 256):
+    [nr_meas, nr_frames] = np.shape(self.eit_data_meas)
+    self.nr_frames = nr_frames
+    self.nr_meas   = nr_meas
+    if (nr_meas == 256):
       self.measure_active_electrodes = 1
     else:
       self.measure_active_electrodes = 0
-    self.EIT_data_meas_passive_electrodes,self.EIT_data_meas_active_electrodes = self.separate_dataframe_data()
+    self.eit_data_meas_passive_electrodes,self.eit_data_meas_active_electrodes = self.separate_dataframe_data()
     #
     # Order ciclically active electrodes: 15,0,1; 0,1,2; ... ;13,14,15.
     # Dim is 3*16, each triplet is an injection frame.
     #
     if (self.measure_active_electrodes == 1):
-      for k in range(NrFrames):
-        aux = self.EIT_data_meas_active_electrodes[3*k*16]
-        self.EIT_data_meas_active_electrodes[3*k*16] = self.EIT_data_meas_active_electrodes[3*k*16+2]
-        self.EIT_data_meas_active_electrodes[3*k*16+2] = aux
-        aux = self.EIT_data_meas_active_electrodes[3*k*16+45]
-        self.EIT_data_meas_active_electrodes[3*k*16+45] = self.EIT_data_meas_active_electrodes[3*k*16+47]
-        self.EIT_data_meas_active_electrodes[3*k*16+47] = aux
+      for k in range(nr_frames):
+        aux = self.eit_data_meas_active_electrodes[3*k*16]
+        self.eit_data_meas_active_electrodes[3*k*16] = self.eit_data_meas_active_electrodes[3*k*16+2]
+        self.eit_data_meas_active_electrodes[3*k*16+2] = aux
+        aux = self.eit_data_meas_active_electrodes[3*k*16+45]
+        self.eit_data_meas_active_electrodes[3*k*16+45] = self.eit_data_meas_active_electrodes[3*k*16+47]
+        self.eit_data_meas_active_electrodes[3*k*16+47] = aux
 		    
     
   def separate_dataframe_data(self):
     if self.measure_active_electrodes == 0:
-      return self.EIT_data_meas, []
+      return self.eit_data_meas, []
     active        = []
     passive_meas  = []
     electrode_pairs = [14,15,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,1]
-    for frame in range(self.NrFrames):
+    for frame in range(self.nr_frames):
       passive_frame = []
-      for meas_in_frame in range(self.NrMeas):
+      for meas_in_frame in range(self.nr_meas):
         inj      = meas_in_frame//16      # Injection frame
         meas_in_inj = meas_in_frame-16*inj    # Measurement within injection frame between 0 and 15
         skipped  = [electrode_pairs[inj+m+1] for m in range(3)]
         if meas_in_inj in skipped:
-          active.append(self.EIT_data_meas[meas_in_frame,frame])
+          active.append(self.eit_data_meas[meas_in_frame,frame])
         else:
-          passive_frame.append(self.EIT_data_meas[meas_in_frame,frame])
+          passive_frame.append(self.eit_data_meas[meas_in_frame,frame])
       if (len(passive_frame) > 0):
         passive_meas.append(passive_frame)
     return np.array(passive_meas).transpose(), active    
   
   def get_normalized_dataframes(self,ref_dataframe):
-    rows, cols = np.shape(self.EIT_data_meas_passive_electrodes)
+    rows, cols = np.shape(self.eit_data_meas_passive_electrodes)
     if (ref_dataframe+1  > cols) or (ref_dataframe < 0):
       print("WARNING: reference frame out of range. Using 0 instead")
       ref_dataframe = 0
     self.ref_frame = ref_dataframe
-    self.EIT_normalized_dif = (self.EIT_data_meas_passive_electrodes.transpose() / self.EIT_data_meas_passive_electrodes.transpose()[ref_dataframe] - 1).transpose()
+    self.EIT_normalized_dif = (self.eit_data_meas_passive_electrodes.transpose() / self.eit_data_meas_passive_electrodes.transpose()[ref_dataframe] - 1).transpose()
     
   
   def estimate_contact_resistances(self,injected_currents):
@@ -161,8 +161,8 @@ class EITdata:
       print("ERROR: Contact resistances cannot be estimated. No data on active electrodes.")
       return
     contact_resistances = []
-    for k in range(16*self.NrFrames):
-      v = abs(self.EIT_data_meas_active_electrodes[3*k])+abs(self.EIT_data_meas_active_electrodes[3*k-1])/2
+    for k in range(16*self.nr_frames):
+      v = abs(self.eit_data_meas_active_electrodes[3*k])+abs(self.eit_data_meas_active_electrodes[3*k-1])/2
       contact_resistances.append(v/injected_currents[k])
     self.contact_resistances = contact_resistances
     
@@ -178,15 +178,15 @@ class EITdata:
     # Get the rotation from uncorrelated to correlated noise
     T = eVe.dot(np.diag(np.sqrt(eVa)))
     #
-    [Nmeas, Nframes] = np.shape(self.EIT_data_meas)
+    [Nmeas, Nframes] = np.shape(self.eit_data_meas)
     # Generate frames of noise
     uncorrelated_noise = [np.random.normal(0,1,Nframes) for k in range(Nmeas)]
     uncorrelated_noise_frames = np.vstack(uncorrelated_noise)
     noise_frames = T.dot(uncorrelated_noise_frames)
     # Get renormalization factor for noise to the specified SNR
-    noise_level = np.linalg.norm(self.EIT_data_meas)/(SNR * np.linalg.norm(noise_frames))
+    noise_level = np.linalg.norm(self.eit_data_meas)/(SNR * np.linalg.norm(noise_frames))
     # Add noise frames to data frames as returned data
-    self.EIT_data_meas = self.EIT_data_meas + noise_frames * noise_level
+    self.eit_data_meas = self.eit_data_meas + noise_frames * noise_level
     self.set_data()
     
     
