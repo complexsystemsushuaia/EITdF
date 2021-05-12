@@ -17,7 +17,7 @@ import matplotlib.cm as cm
 from scipy import io
 
 
-def show_gridimage_frame(frame, recmodel, vmin, vmax, invert=False):
+def show_gridimage_frame(frame, recmodel, vmin, vmax, hyper_fraction, invert=False):
   gridframe = np.empty((recmodel.Ygridsize,recmodel.Xgridsize))
   for i in range(0,recmodel.Ygridsize):
     for j in range(0,recmodel.Xgridsize):
@@ -31,6 +31,7 @@ def show_gridimage_frame(frame, recmodel, vmin, vmax, invert=False):
   thisplot = plt
   thisplot.imshow(gridframe, cmap = cm.Blues, interpolation='bicubic', extent=(recmodel.x0, recmodel.xf, recmodel.y0, recmodel.yf), vmin=vmin, vmax=vmax)
   thisplot.colorbar()
+  thisplot.title(("Hyperparameter = ", hyper_fraction ," * w0"))
   thisplot.plot(recmodel.boundary[:,0], recmodel.boundary[:,1])
   thisplot.scatter(recmodel.electrode_positions[:,0], recmodel.electrode_positions[:,1])
 	
