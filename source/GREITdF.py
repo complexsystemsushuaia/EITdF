@@ -66,7 +66,7 @@
 #
 # METHODS:
 #
-# RawImage.RawImage(rec_model,eitdata)
+# RawImage.raw_image(rec_model,eitdata)
 # RawImage.calc_raw_image(reffframe) #refframe is the number of frame taken as reference. It is called by the constructor.
 # RawImage.get_ref_frame()           #finds the minimum conductivity frame to act as a reference. Called by constructor.
 # RawImage.ShowFrame(frame_number) #plots frame
@@ -275,18 +275,18 @@ class RawImage:
       
   def calc_raw_image(self,refframe):
     self.eitdata.get_normalized_dataframes(refframe)
-    self.RawImage=np.matmul(self.rec_model.rm,self.eitdata.EIT_normalized_dif)
-    self.min = self.RawImage.min()
-    self.max = self.RawImage.max()
+    self.raw_image=np.matmul(self.rec_model.rm,self.eitdata.EIT_normalized_dif)
+    self.min = self.raw_image.min()
+    self.max = self.raw_image.max()
   
     
   def get_ref_frame(self):
-    meast,frames = np.shape(self.RawImage)
+    meast,frames = np.shape(self.raw_image)
     resmin = -10000000
     for frame in range(frames):
       res = 0
       for meas in range(meast):
-        res += self.RawImage[meas,frame]
+        res += self.raw_image[meas,frame]
       if res > resmin:
         framin = frame
         resmin = res

@@ -137,3 +137,20 @@ def get_sd_image(raw_image, initial_frnr, final_frnr, threshold):
     if (aux[k]/max_sd < threshold):
       aux_array[k] = 0
   return aux_array
+
+def get_linreg_image(raw_image, initial_frnr, final_frnr, threshold):
+  [sizeFrame, NrFrames]  = np.shape(raw_image)
+  if (initial_frnr > final_frnr)|(final_frnr > NrFrames):
+    print("*** ERROR in frame nr limits ***")
+    return
+  waveform = [np.mean(raw_image[:,k]) for k in range(initial_frnr, final_frnr+1)]
+  aux = []
+  for pix in range(0,np.shape(raw_image)[0]):
+    pixwaveform = [raw_image[pix,k] for k in range(initial_frnr, final_frnr+1)]
+    aux.append(np.polyfit(waveform, pixwaveform, 1)[0])
+  aux_array = np.array(aux)
+  max_sd = aux_array.max()
+  for k in range(0,sizeFrame):
+    if (aux[k]/max_sd < threshold):
+      aux_array[k] = 0
+  return aux_array
