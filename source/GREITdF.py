@@ -209,6 +209,11 @@ class ReconstructionModel(object):
       self.J  = io.loadmat(environ_options.modelsdir+"/"+model_name+"/J.mat")['J']
     except OSError:
       self.IsTijonov = 0;
+    self.recaspectratio = 1
+    try:
+      self.J_ar = io.loadmat(environ_options.modelsdir+"/"+model_name+"/J_aspectratio.mat")['J_ar'][0]
+    except OSError:
+      self.recaspectratio = 0
     filename = environ_options.modelsdir+"/"+model_name+"/noiselev.mat"
     with open(filename) as f:
       lines = f.readlines()
@@ -253,7 +258,7 @@ class ReconstructionModel(object):
       self.condmap[31-j,i] = k
       
       
-  def set_hyperparameter(self,hyperparameter_fraction):
+  def set_hyperparameter(self, hyperparameter_fraction, movement_hyperparam = 1):
     self.hyperparameter_fraction = hyperparameter_fraction
     # Compute inverse matrix
     w = self.hyperparameter * self.hyperparameter_fraction
@@ -263,8 +268,13 @@ class ReconstructionModel(object):
       print("TIJONOV")
     else:
       m_matrix            = self.y_matrix.dot(self.y_matrix.transpose()) + self.Sn*(w**2)
+      if (self.recaspectratio):
+        m_matrix         += self.J_ar.transpose() * self.J_ar * movement_hyperparam
+      m_inv               = np.linalg.inv(m_matrix)
       pjt_matrix          = self.d_matrix.dot(self.y_matrix.transpose())
-      self.rm             = pjt_matrix.dot(np.linalg.inv(m_matrix))
+      self.rm             = pjt_matrix.dot(m_inv)
+      if (self.recaspectratio):
+        self.aspectratio_rm = self.J_ar.dot(m_inv)
     
 
 class RawImage:
@@ -275,7 +285,9 @@ class RawImage:
       
   def calc_raw_image(self,refframe):
     self.eitdata.get_normalized_dataframes(refframe)
-    self.raw_image=np.matmul(self.rec_model.rm,self.eitdata.EIT_normalized_dif)
+    self.raw_image=np.matmul(self.rec_model.rm, self.eitdata.EIT_normalized_dif)
+    if (self.rec_model.recaspectratio):
+      self.aspectratio = np.matmul(self.rec_model.aspectratio_rm, self.eitdata.EIT_normalized_dif)
     self.min = self.raw_image.min()
     self.max = self.raw_image.max()
   
