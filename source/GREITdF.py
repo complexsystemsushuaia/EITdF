@@ -212,8 +212,10 @@ class ReconstructionModel(object):
     self.recaspectratio = 1
     try:
       self.J_ar = io.loadmat(environ_options.modelsdir+"/"+model_name+"/J_aspectratio.mat")['J_ar'][0]
+      self.ar_eigenval = io.loadmat(environ_options.modelsdir+"/"+model_name+"/aspectratio.eigenval.mat")['ar_eigenval']
     except OSError:
       self.recaspectratio = 0
+      print("OOPS")
     filename = environ_options.modelsdir+"/"+model_name+"/noiselev.mat"
     with open(filename) as f:
       lines = f.readlines()
@@ -268,14 +270,17 @@ class ReconstructionModel(object):
       print("TIJONOV")
     else:
       m_matrix            = self.y_matrix.dot(self.y_matrix.transpose()) + self.Sn*(w**2)
-      if (self.recaspectratio):
-        m_matrix         += self.J_ar.transpose() * self.J_ar * movement_hyperparam
       m_inv               = np.linalg.inv(m_matrix)
       pjt_matrix          = self.d_matrix.dot(self.y_matrix.transpose())
       self.rm             = pjt_matrix.dot(m_inv)
       if (self.recaspectratio):
-        self.aspectratio_rm = self.J_ar.dot(m_inv)
-    
+        MJ_ar             = self.J_ar.reshape(len(self.J_ar),1)
+        self.proj_mov     = (1/self.ar_eigenval)*MJ_ar.dot(MJ_ar.transpose())
+        self.proj_cond    = np.identity(np.shape(self.Sn)[0]) - self.proj_mov
+        inv_proj          = self.proj_cond.dot(m_inv)
+        self.rm           = pjt_matrix.dot(inv_proj)
+        self.aspectratio_rm = self.J_ar.dot(self.proj_mov)
+        
 
 class RawImage:
   def __init__(self,rec_model,eitdata):
